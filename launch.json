@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Francesca Portal",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/app.py",
+      "console": "integratedTerminal",
+      "env": {
+        "ADMIN_USERNAME": "ivantomic",
+        "ADMIN_PASSWORD": "ChangeMe!2025",
+        "USER_USERNAME": "francesca",
+        "USER_PASSWORD": "changeme",
+        "SECRET_KEY": "supersecretkey"
+      }
+    }
+  ]
+}

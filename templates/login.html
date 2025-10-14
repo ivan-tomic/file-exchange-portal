@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Login · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container loginbox">
+    <div class="card">
+        <div class="header">
+            <div class="h1">Login</div>
+            <div class="muted">{{ app_name }}</div>
+        </div>
+        
+        <form method="post">
+            <div class="formrow">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" required autofocus>
+            </div>
+            <div class="formrow">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" required>
+            </div>
+            <div class="formrow">
+                <button class="btn" type="submit">Sign in</button>
+            </div>
+        </form>
+
+        <div class="footer small">
+            No account yet? <a href="{{ url_for('register') }}">Register</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}

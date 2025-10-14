@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Users · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <div>
+                <div class="h1">User management</div>
+                <div class="muted">{{ app_name }}</div>
+            </div>
+            <div>
+                <a class="btn secondary" href="{{ url_for('index') }}">Back</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h2 style="margin-top: 24px; margin-bottom: 12px; font-size: 18px; color: #cbd5e1;">Users</h2>
+        
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th style="width:520px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.email or '—' }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>{{ 'active' if u.is_active else 'inactive' }}</td>
+                    <td>
+                        <div class="row_actions">
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="promote">
+                                <button class="btn" type="submit">Promote → admin</button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="demote">
+                                <button class="btn secondary" type="submit">Demote → user</button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="make_super">
+                                <button class="btn" type="submit">Grant super</button>
+                            </form>
+                            {% if u.is_active %}
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="deactivate">
+                                <button class="btn del" type="submit">Deactivate</button>
+                            </form>
+                            {% else %}
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="activate">
+                                <button class="btn" type="submit">Activate</button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="{{ url_for('admin_users_action') }}" class="inline-form">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="reset_password">
+                                <input name="new_password" type="password" placeholder="New password" required>
+                                <button type="submit">Reset password</button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="username" value="{{ u.username }}">
+                                <input type="hidden" name="action" value="delete_user">
+                                <button class="btn del" type="submit" onclick="return confirm('Delete user {{ u.username }}?')">Delete user</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="thick-divider"></div>
+
+        <h2 style="margin-top: 24px; margin-bottom: 12px; font-size: 18px; color: #cbd5e1;">Invite Codes</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <form method="post" action="{{ url_for('admin_users_action') }}" class="inline-form" style="gap: 12px;">
+                <input type="hidden" name="action" value="gen_invites">
+                <label for="count" class="muted">Generate</label>
+                <input id="count" name="count" type="text" value="10" style="width: 80px;" required>
+                <label for="length" class="muted">codes of length</label>
+                <input id="length" name="length" type="text" value="7" style="width: 80px;" required>
+                <button class="btn" type="submit">Generate Invite Codes</button>
+            </form>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Status</th>
+                    <th>Used By</th>
+                    <th>Used At</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if invites %}
+                    {% for inv in invites %}
+                    <tr>
+                        <td><strong>{{ inv.code }}</strong></td>
+                        <td>
+                            {% if inv.is_used %}
+                                <span style="color: #9aa1ad;">Used</span>
+                            {% else %}
+                                <span style="color: #4caf50;">Available</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ inv.used_by or '—' }}</td>
+                        <td>{{ inv.used_at[:16].replace('T', ' ') if inv.used_at else '—' }}</td>
+                        <td>{{ inv.created_at[:16].replace('T', ' ') if inv.created_at else '—' }}</td>
+                        <td>
+                            {% if not inv.is_used %}
+                            <form method="post" action="{{ url_for('admin_users_action') }}">
+                                <input type="hidden" name="action" value="revoke_invite">
+                                <input type="hidden" name="code" value="{{ inv.code }}">
+                                <button class="btn del" type="submit" onclick="return confirm('Revoke code {{ inv.code }}?')">Revoke</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="muted">No invite codes yet. Generate some above.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="center-link">
+            <h2><a href="{{ dashboard_url }}" target="_blank" rel="noopener noreferrer">Amazon Business - EU Campaign 2025 - Dashboard</a></h2>
+        </div>
+    </div>
+</div>
+{% endblock %}

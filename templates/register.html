@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Register · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container loginbox">
+    <div class="card">
+        <div class="header">
+            <div class="h1">Create account</div>
+            <div class="muted">{{ app_name }}</div>
+        </div>
+        
+        <form method="post">
+            <div class="formrow">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" required autofocus>
+            </div>
+            <div class="formrow">
+                <label for="email">Email (optional - leave blank to skip upload notifications)</label>
+                <input id="email" name="email" type="text" placeholder="name@example.com">
+            </div>
+            <div class="formrow">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" required>
+            </div>
+            {% if invite_required %}
+            <div class="formrow">
+                <label for="invite">Invite code</label>
+                <input id="invite" name="invite" type="text" required>
+            </div>
+            {% endif %}
+            <div class="formrow">
+                <button class="btn" type="submit">Create account</button>
+                <a class="btn secondary" href="{{ url_for('login') }}" style="margin-left:8px">Back to login</a>
+            </div>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}

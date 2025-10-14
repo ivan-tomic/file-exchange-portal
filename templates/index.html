@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <div>
+                <div class="h1">{{ app_name }}</div>
+                <div class="muted">Logged in as <strong>{{ user }}</strong> <span class="badge">{{ role }}</span></div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+                <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+                    {% if role != 'user' %}
+                        <label class="muted" for="urgency">Urgency</label>
+                        <select name="urgency" id="urgency">
+                            <option value="Normal" selected>Normal</option>
+                            <option value="High">High</option>
+                        </select>
+                        <label class="muted" for="stage">Stage</label>
+                        <select name="stage" id="stage">
+                            {% for choice in stage_choices %}
+                                <option value="{{ choice }}">{{ choice }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                    <input type="file" name="file" accept=".zip" required>
+                    <button class="btn" type="submit">Upload .zip</button>
+                </form>
+                {% if role == 'super' %}
+                    <a class="btn secondary" href="{{ url_for('admin_users') }}">User Admin</a>
+                {% endif %}
+                <a class="btn secondary" href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Urgency</th>
+                    <th class="nowrap">Stage</th>
+                    <th>Reviewed</th>
+                    <th>Notes</th>
+                    <th>Size</th>
+                    <th>Last modified</th>
+                    <th style="width:420px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if admin_rows %}
+                    {% for f in admin_rows %}
+                        <tr>
+                            <td>{{ f.name }}</td>
+                            <td>
+                                {% if f.urgency == 'High' %}
+                                    <span class="urg urg-high">High</span>
+                                {% else %}
+                                    <span class="urg urg-normal">Normal</span>
+                                {% endif %}
+                                {% if role == 'admin' or role == 'super' %}
+                                <form class="inline-form" action="{{ url_for('set_urgency', filename=f.name) }}" method="post" style="margin-left:8px">
+                                    <select name="urgency">
+                                        <option value="Normal" {% if f.urgency != 'High' %}selected{% endif %}>Normal</option>
+                                        <option value="High" {% if f.urgency == 'High' %}selected{% endif %}>High</option>
+                                    </select>
+                                    <button type="submit">Update</button>
+                                </form>
+                                {% endif %}
+                            </td>
+
+                            <td class="nowrap">
+                                {{ f.stage if f.stage else '—' }}
+                                {% if role == 'admin' or role == 'super' %}
+                                <form class="inline-form" action="{{ url_for('set_stage', filename=f.name) }}" method="post" style="margin-left:8px">
+                                    <select name="stage">
+                                        {% for choice in stage_choices %}
+                                            <option value="{{ choice }}" {% if f.stage == choice %}selected{% endif %}>{{ choice }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit">Update</button>
+                                </form>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if role == 'user' %}
+                                    <form method="post" action="{{ url_for('toggle_reviewed', filename=f.name) }}" class="autosubmit">
+                                        <input type="checkbox" name="checked" value="1" {% if f.reviewed %}checked{% endif %}>
+                                    </form>
+                                {% else %}
+                                    <input type="checkbox" disabled {% if f.reviewed %}checked{% endif %}>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <form method="post" action="{{ url_for('set_note', filename=f.name) }}" class="inline-form">
+                                    <input class="note-input" type="text" name="note" maxlength="100" value="{{ f.note or '' }}" placeholder="Add a note (max 100 chars)" autocomplete="off">
+                                    <button type="submit">Save</button>
+                                </form>
+                                {% if f.note_by %}
+                                    <div class="small">Last edited by <strong>{{ f.note_by }}</strong>{% if f.note_at %} on {{ f.note_at.replace('T',' ')[:16] }} UTC{% endif %}</div>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ (f.size/1024/1024)|round(2) }} MB</td>
+                            <td>{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="row_actions">
+                                    <a class="btn" href="{{ url_for('download', filename=f.name) }}">Download</a>
+                                    {% if role == 'admin' or role == 'super' %}
+                                    <form action="{{ url_for('approve', filename=f.name) }}" method="post" onsubmit="return confirm('Archive {{ f.name }}?');">
+                                        <button class="btn" type="submit">Archive</button>
+                                    </form>
+                                    {% endif %}
+                                    {% if f.can_delete %}
+                                    <form action="{{ url_for('delete_file', filename=f.name) }}" method="post" onsubmit="return confirm('Delete {{ f.name }} permanently?');">
+                                        <button class="btn del" type="submit">Delete</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+
+                {% if user_rows %}
+                    <tr><td colspan="8">
+                        <div class="thick-divider"></div>
+                        <div class="section-label">Files uploaded by the Amazon Business:</div>
+                    </td></tr>
+
+                    {% for f in user_rows %}
+                        <tr>
+                            <td>{{ f.name }}</td>
+                            <td>
+                                {% if f.urgency == 'High' %}
+                                    <span class="urg urg-high">High</span>
+                                {% else %}
+                                    <span class="urg urg-normal">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td class="nowrap">{{ f.stage if f.stage else '—' }}</td>
+
+                            <!-- Reviewed: always disabled for user uploads -->
+                            <td><input type="checkbox" disabled {% if f.reviewed %}checked{% endif %}></td>
+
+                            <td>
+                                <form method="post" action="{{ url_for('set_note', filename=f.name) }}" class="inline-form">
+                                    <input class="note-input" type="text" name="note" maxlength="100" value="{{ f.note or '' }}" placeholder="Add a note (max 100 chars)" autocomplete="off">
+                                    <button type="submit">Save</button>
+                                </form>
+                                {% if f.note_by %}
+                                    <div class="small">Last edited by <strong>{{ f.note_by }}</strong>{% if f.note_at %} on {{ f.note_at.replace('T',' ')[:16] }} UTC{% endif %}</div>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ (f.size/1024/1024)|round(2) }} MB</td>
+                            <td>{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="row_actions">
+                                    <a class="btn" href="{{ url_for('download', filename=f.name) }}">Download</a>
+                                    {% if f.can_delete %}
+                                    <form action="{{ url_for('delete_file', filename=f.name) }}" method="post" onsubmit="return confirm('Delete {{ f.name }} permanently?');">
+                                        <button class="btn del" type="submit">Delete</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+
+                {% if not admin_rows and not user_rows %}
+                    <tr><td colspan="8" class="muted">No pending .zip files.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="center-link">
+            <h2><a href="{{ dashboard_url }}" target="_blank" rel="noopener noreferrer">Amazon Business - EU Campaign 2025 - Dashboard</a></h2>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // auto-submit the Reviewed checkbox forms (only rendered for role 'user' on non-user uploads)
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('form.autosubmit input[type=checkbox]').forEach(function(cb){
+            cb.addEventListener('change', function(){ cb.form.submit(); });
+        });
+    });
+</script>
+{% endblock %}
