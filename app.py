@@ -25,6 +25,8 @@ from config import (
     SESSION_COOKIE_SECURE, STAGE_CHOICES, STAGE_ALIASES, 
     DASHBOARD_URL, INV_CHARS, INVITE_CODE
 )
+# Import email utilities
+from email_utils import notify_file_upload
 
 # -------------------- Flask App Setup --------------------
 app = Flask(__name__)
@@ -436,6 +438,39 @@ def upload():
 
     log_event(session.get("user", "?"), "upload", f"{safe_name} (urgency={urgency}, stage={stage or '[blank]'})")
     flash(f"Uploaded {safe_name}", "ok")
+    
+    # Send email notifications
+    try:
+        recipient_emails = []
+        
+        if role == "user":
+            # User uploaded: notify all admin and super users
+            with get_db() as db:
+                admins = db.execute(
+                    "SELECT email FROM users WHERE (role='admin' OR role='super') AND is_active=1 AND email IS NOT NULL AND email != ''"
+                ).fetchall()
+                recipient_emails = [admin["email"] for admin in admins]
+        else:
+            # Admin/super uploaded: notify all users with emails
+            with get_db() as db:
+                users = db.execute(
+                    "SELECT email FROM users WHERE role='user' AND is_active=1 AND email IS NOT NULL AND email != ''"
+                ).fetchall()
+                recipient_emails = [user["email"] for user in users]
+        
+        if recipient_emails:
+            notify_file_upload(
+                filename=safe_name,
+                uploader=session.get("user", "?"),
+                uploader_role=role,
+                recipient_emails=recipient_emails,
+                urgency=urgency,
+                stage=stage
+            )
+    except Exception as e:
+        # Log error but don't fail the upload
+        print(f"Email notification failed: {e}")
+    
     return redirect(url_for("index"))
 
 @app.route("/set_urgency/<path:filename>", methods=["POST"])

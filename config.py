@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 """
 Configuration settings for File Exchange App
 """
@@ -51,3 +53,13 @@ DASHBOARD_URL = "https://studio.business-reporter.com/abeu5dashboard/index.html"
 
 # Invite code characters for generation
 INV_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+# Email settings
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")  # Will set this later
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")  # Will set this later
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "noreply@business-reporter.com")
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Business Reporter File Exchange")
+
+# Email notifications enabled/disabled
+EMAIL_NOTIFICATIONS_ENABLED = os.getenv("EMAIL_NOTIFICATIONS_ENABLED", "1") == "1"
