@@ -63,3 +63,6 @@ SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Business Reporter File Exchange")
 
 # Email notifications enabled/disabled
 EMAIL_NOTIFICATIONS_ENABLED = os.getenv("EMAIL_NOTIFICATIONS_ENABLED", "1") == "1"
+# Timezone settings
+import pytz
+UK_TIMEZONE = pytz.timezone('Europe/London')  # Handles GMT/BST automatically

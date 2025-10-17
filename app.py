@@ -23,7 +23,7 @@ from config import (
     APP_NAME, FILES_DIR, AUDIT_LOG, INDEX_FILE, USER_DB_PATH, 
     SECRET_KEY, PORT, ALLOWED_EXT, MAX_CONTENT_LENGTH, 
     SESSION_COOKIE_SECURE, STAGE_CHOICES, STAGE_ALIASES, 
-    DASHBOARD_URL, INV_CHARS, INVITE_CODE
+    DASHBOARD_URL, INV_CHARS, INVITE_CODE, UK_TIMEZONE
 )
 # Import email utilities
 from email_utils import notify_file_upload
@@ -41,7 +41,7 @@ app.config.update(
 # -------------------- Helper Functions --------------------
 def log_event(user: str, action: str, detail: str = "") -> None:
     """Log an event to the audit log."""
-    ts = dt.datetime.utcnow().isoformat() + "Z"
+    ts = dt.datetime.now(UK_TIMEZONE).isoformat()
     with AUDIT_LOG.open("a", encoding="utf-8") as f:
         f.write(f"{ts}\t{user}\t{action}\t{detail}\n")
 
@@ -183,7 +183,7 @@ def list_users():
 def create_user(username, password, role="user", email=None):
     """Create a new user."""
     ph = generate_password_hash(password)
-    created = dt.datetime.utcnow().isoformat() + "Z"
+    created = dt.datetime.now(UK_TIMEZONE).isoformat()
     with get_db() as db:
         db.execute(
             "INSERT INTO users (username, email, password_hash, role, is_active, created_at) VALUES (?, ?, ?, ?, 1, ?)",
@@ -221,7 +221,7 @@ def count_supers():
 def create_invite_codes(n=10, length=7):
     """Create invite codes."""
     import secrets
-    now = dt.datetime.utcnow().isoformat() + "Z"
+    now = dt.datetime.now(UK_TIMEZONE).isoformat()
     codes = []
     with get_db() as db:
         for _ in range(max(1, min(int(n), 100))):
@@ -264,7 +264,7 @@ def consume_invite(code, username):
     """Mark an invite as used."""
     if INVITE_CODE and code == INVITE_CODE:
         return
-    now = dt.datetime.utcnow().isoformat() + "Z"
+    now = dt.datetime.now(UK_TIMEZONE).isoformat()
     with get_db() as db:
         db.execute(
             "UPDATE invites SET is_used=1, used_by=?, used_at=? WHERE code=? AND is_used=0",
@@ -426,7 +426,7 @@ def upload():
     idx[safe_name] = {
         "uploader": session.get("user", "?"),
         "uploader_role": role,
-        "uploaded_at": dt.datetime.utcnow().isoformat() + "Z",
+        "uploaded_at": dt.datetime.now(UK_TIMEZONE).isoformat(),
         "urgency": urgency,
         "stage": stage,
         "reviewed_by": {},
@@ -576,7 +576,7 @@ def set_note(filename):
     meta = idx.get(filename) or {}
     meta["note"] = note
     meta["note_by"] = session.get("user", "?")
-    meta["note_at"] = dt.datetime.utcnow().isoformat() + "Z"
+    meta["note_at"] = dt.datetime.now(UK_TIMEZONE).isoformat()
     idx[filename] = meta
     save_index(idx)
 
@@ -610,7 +610,7 @@ def approve(filename):
 
     target = approved_dir / filename
     if target.exists():
-        ts = dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        ts = dt.datetime.now(UK_TIMEZONE).strftime("%Y%m%d%H%M%S")
         stem, suffix = Path(filename).stem, Path(filename).suffix
         target = approved_dir / f"{stem}__approved_{ts}{suffix}"
 
