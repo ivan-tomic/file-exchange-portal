@@ -1,12 +1,29 @@
 /* Business Reporter - File Exchange Portal - Main Stylesheet */
 
-:root { 
-  --bg: #0b0c10; 
-  --card: #111218; 
-  --ink: #f6f7fb; 
-  --muted: #a7aab5; 
-  --accent: #00a8e1; 
-  --border: #1a1d26; 
+/* CSS Variables for Dark Theme (default) */
+:root {
+    --bg: #0f1117;
+    --card: #1a1d29;
+    --border: #2a2f3b;
+    --ink: #e6e9f2;
+    --muted: #9aa1ad;
+    --primary: #d10a10;
+    --primary-hover: #b00808;
+    --dashboard-color: #FF6200;
+    --amazon-logo: url('/static/Amazon_Business_Logo_Horizontal_CYMK_White+Smile_Orange.png');
+}
+
+/* Light Theme */
+[data-theme="light"] {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --ink: #1a1d29;
+    --muted: #64748b;
+    --primary: #d10a10;
+    --primary-hover: #b00808;
+    --dashboard-color: #FF6200;
+    --amazon-logo: url('/static/Amazon_Business_Logo_Horizontal_CYMK_Black+Smile_Orange.png');
 }
 
 * { 
@@ -429,4 +446,84 @@ label {
 
 .modal-footer .btn {
     min-width: 100px;
+}
+/* Theme Toggle Switch */
+.theme-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    padding: 15px 0;
+}
+
+.theme-toggle-label {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+    user-select: none;
+}
+
+.theme-toggle-label.active {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #2a2f3b;
+    transition: 0.3s;
+    border-radius: 30px;
+}
+
+.theme-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .theme-slider {
+    background-color: var(--primary);
+}
+
+input:checked + .theme-slider:before {
+    transform: translateX(30px);
+}
+
+/* Amazon logo dynamic switching */
+.amazon-logo {
+    content: var(--amazon-logo);
+}
+
+/* Dashboard link color */
+.center-link a {
+    color: var(--dashboard-color) !important;
+}
+
+.center-link a:hover {
+    color: var(--primary) !important;
 }

@@ -21,11 +21,67 @@
     {% endblock %}
 
     {% block bottom_logo %}
-    <div class="logo-wrap logo-bottom">
-        <img src="{{ url_for('static', filename='Amazon_Business_Logo_Horizontal_CYMK_White+Smile_Orange.png') }}"
-             alt="Amazon Business"
-             onerror="this.onerror=null; this.src='{{ url_for('static', filename='ABLogo.svg') }}'">
+    <div class="center-link">
+        <img src="{{ url_for('static', filename='Amazon_Business_Logo_Horizontal_CYMK_White+Smile_Orange.png') }}" 
+             alt="Amazon Business" 
+             class="amazon-logo-img"
+             id="amazonLogo"
+             style="max-width: 350px; margin-bottom: 15px;">
+        
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+            <span class="theme-toggle-label" id="darkLabel">Dark theme</span>
+            <label class="theme-switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="theme-slider"></span>
+            </label>
+            <span class="theme-toggle-label" id="lightLabel">Light theme</span>
+        </div>        
     </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+        const amazonLogo = document.getElementById('amazonLogo');
+        const darkLabel = document.getElementById('darkLabel');
+        const lightLabel = document.getElementById('lightLabel');
+        
+        // Check for saved theme preference or default to dark
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        
+        // Apply saved theme on page load
+        if (currentTheme === 'light') {
+            htmlElement.setAttribute('data-theme', 'light');
+            themeToggle.checked = true;
+            amazonLogo.src = "{{ url_for('static', filename='Amazon_Business_Logo_Horizontal_CYMK_Black+Smile_Orange.png') }}";
+            lightLabel.classList.add('active');
+            darkLabel.classList.remove('active');
+        } else {
+            htmlElement.setAttribute('data-theme', 'dark');
+            themeToggle.checked = false;
+            amazonLogo.src = "{{ url_for('static', filename='Amazon_Business_Logo_Horizontal_CYMK_White+Smile_Orange.png') }}";
+            darkLabel.classList.add('active');
+            lightLabel.classList.remove('active');
+        }
+        
+        // Toggle theme on switch change
+        themeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                htmlElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                amazonLogo.src = "{{ url_for('static', filename='Amazon_Business_Logo_Horizontal_CYMK_Black+Smile_Orange.png') }}";
+                lightLabel.classList.add('active');
+                darkLabel.classList.remove('active');
+            } else {
+                htmlElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                amazonLogo.src = "{{ url_for('static', filename='Amazon_Business_Logo_Horizontal_CYMK_White+Smile_Orange.png') }}";
+                darkLabel.classList.add('active');
+                lightLabel.classList.remove('active');
+            }
+        });
+    </script>
     {% endblock %}
 
     {% block scripts %}
