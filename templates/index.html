@@ -58,80 +58,61 @@
             </thead>
             <tbody>
                 {% if admin_rows %}
-                    {% for f in admin_rows %}
-                        <tr>
-                            <td>{{ f.name }}</td>
-                            <td>
-                                {% if f.urgency == 'High' %}
-                                    <span class="urg urg-high">High</span>
-                                {% else %}
-                                    <span class="urg urg-normal">Normal</span>
-                                {% endif %}
-                                {% if role == 'admin' or role == 'super' %}
-                                <form class="inline-form" action="{{ url_for('set_urgency', filename=f.name) }}" method="post" style="margin-left:8px">
-                                    <select name="urgency">
-                                        <option value="Normal" {% if f.urgency != 'High' %}selected{% endif %}>Normal</option>
-                                        <option value="High" {% if f.urgency == 'High' %}selected{% endif %}>High</option>
-                                    </select>
-                                    <button type="submit">Update</button>
-                                </form>
-                                {% endif %}
-                            </td>
-
-                            <td class="nowrap">
-                                {{ f.stage if f.stage else '—' }}
-                                {% if role == 'admin' or role == 'super' %}
-                                <form class="inline-form" action="{{ url_for('set_stage', filename=f.name) }}" method="post" style="margin-left:8px">
-                                    <select name="stage">
-                                        {% for choice in stage_choices %}
-                                            <option value="{{ choice }}" {% if f.stage == choice %}selected{% endif %}>{{ choice }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <button type="submit">Update</button>
-                                </form>
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                {% if role == 'user' %}
-                                    <form method="post" action="{{ url_for('toggle_reviewed', filename=f.name) }}" class="autosubmit">
-                                        <input type="checkbox" name="checked" value="1" {% if f.reviewed %}checked{% endif %}>
-                                    </form>
-                                {% else %}
-                                    <input type="checkbox" disabled {% if f.reviewed %}checked{% endif %}>
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                <form method="post" action="{{ url_for('set_note', filename=f.name) }}" class="inline-form">
-                                    <input class="note-input" type="text" name="note" maxlength="100" value="{{ f.note or '' }}" placeholder="Add a note (max 100 chars)" autocomplete="off">
-                                    <button type="submit">Save</button>
-                                </form>
-                                {% if f.note_by %}
-                                    <div class="small">Last edited by <strong>{{ f.note_by }}</strong>{% if f.note_at %} on {{ f.note_at.replace('T',' ')[:16] }}{% endif %}</div>
-                                {% endif %}
-                            </td>
-
-                            <td>{{ (f.size/1024/1024)|round(2) }} MB</td>
-                            <td>{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                <div class="row_actions">
-                                    <a class="btn" href="{{ url_for('download', filename=f.name) }}">Download</a>
-                                    {% if role == 'admin' or role == 'super' %}
-                                    <form action="{{ url_for('approve', filename=f.name) }}" method="post" onsubmit="return confirm('Archive {{ f.name }}?');">
-                                        <button class="btn" type="submit">Archive</button>
-                                    </form>
-                                    {% endif %}
-                                    {% if f.can_delete %}
-                                    <form action="{{ url_for('delete_file', filename=f.name) }}" method="post" onsubmit="return confirm('Delete {{ f.name }} permanently?');">
-                                        <button class="btn del" type="submit">Delete</button>
-                                    </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
+          {% for f in admin_rows %}
+            <tr>
+              <td>{{ f.name }}</td>
+              <td>
+                {% if f.urgency == 'High' %}
+                  <span class="urg urg-high">High</span>
+                {% else %}
+                  <span class="urg urg-normal">Normal</span>
                 {% endif %}
+              </td>
+
+              <td class="nowrap">{{ f.stage if f.stage else '—' }}</td>
+
+              <td>
+                {% if role == 'user' %}
+                  <form method="post" action="{{ url_for('toggle_reviewed', filename=f.name) }}" class="autosubmit">
+                    <input type="checkbox" name="checked" value="1" {% if f.reviewed %}checked{% endif %}>
+                  </form>
+                {% else %}
+                  <input type="checkbox" disabled {% if f.reviewed %}checked{% endif %}>
+                {% endif %}
+              </td>
+
+              <td>
+                <div class="small">{{ f.note[:50] + '...' if f.note and f.note|length > 50 else f.note or 'No notes' }}</div>
+                {% if f.note_by %}
+                  <div class="small">Last edited by <strong>{{ f.note_by }}</strong>{% if f.note_at %} on {{ f.note_at.replace('T',' ')[:16] }}{% endif %}</div>
+                {% endif %}
+              </td>
+
+              <td>{{ (f.size/1024/1024)|round(2) }} MB</td>
+              <td>{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td>
+    <div class="row_actions">
+        {% if role == 'admin' or role == 'super' %}
+        <button class="menu-btn" onclick="openModal('{{ f.name }}', '{{ f.urgency }}', '{{ f.stage }}', '{{ f.note|replace("'", "\\'") }}')">⋮</button>
+        {% elif role == 'user' %}
+        <button class="menu-btn" onclick="openUserNoteModal('{{ f.name }}', '{{ f.note|replace("'", "\\'") }}')">⋮</button>
+        {% endif %}
+        <a class="btn" href="{{ url_for('download', filename=f.name) }}">Download</a>
+                  {% if role == 'admin' or role == 'super' %}
+                  <form action="{{ url_for('approve', filename=f.name) }}" method="post" onsubmit="return confirm('Archive {{ f.name }}?');">
+                    <button class="btn" type="submit">Archive</button>
+                  </form>
+                  {% endif %}
+                  {% if f.can_delete %}
+                  <form action="{{ url_for('delete_file', filename=f.name) }}" method="post" onsubmit="return confirm('Delete {{ f.name }} permanently?');">
+                    <button class="btn del" type="submit">Delete</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endif %}
 
                 {% if user_rows %}
                     <tr><td colspan="8">
@@ -140,44 +121,46 @@
                     </td></tr>
 
                     {% for f in user_rows %}
-                        <tr>
-                            <td>{{ f.name }}</td>
-                            <td>
-                                {% if f.urgency == 'High' %}
-                                    <span class="urg urg-high">High</span>
-                                {% else %}
-                                    <span class="urg urg-normal">Normal</span>
-                                {% endif %}
-                            </td>
-                            <td class="nowrap">{{ f.stage if f.stage else '—' }}</td>
+            <tr>
+              <td>{{ f.name }}</td>
+              <td>
+                {% if f.urgency == 'High' %}
+                  <span class="urg urg-high">High</span>
+                {% else %}
+                  <span class="urg urg-normal">Normal</span>
+                {% endif %}
+              </td>
+              <td class="nowrap">{{ f.stage if f.stage else '—' }}</td>
 
-                            <!-- Reviewed: always disabled for user uploads -->
-                            <td><input type="checkbox" disabled {% if f.reviewed %}checked{% endif %}></td>
+              <!-- Reviewed: always disabled for user uploads -->
+              <td><input type="checkbox" disabled {% if f.reviewed %}checked{% endif %}></td>
 
-                            <td>
-                                <form method="post" action="{{ url_for('set_note', filename=f.name) }}" class="inline-form">
-                                    <input class="note-input" type="text" name="note" maxlength="100" value="{{ f.note or '' }}" placeholder="Add a note (max 100 chars)" autocomplete="off">
-                                    <button type="submit">Save</button>
-                                </form>
-                                {% if f.note_by %}
-                                    <div class="small">Last edited by <strong>{{ f.note_by }}</strong>{% if f.note_at %} on {{ f.note_at.replace('T',' ')[:16] }}{% endif %}</div>
-                                {% endif %}
-                            </td>
+              <td>
+                <div class="small">{{ f.note[:50] + '...' if f.note and f.note|length > 50 else f.note or 'No notes' }}</div>
+                {% if f.note_by %}
+                  <div class="small">Last edited by <strong>{{ f.note_by }}</strong>{% if f.note_at %} on {{ f.note_at.replace('T',' ')[:16] }}{% endif %}</div>
+                {% endif %}
+              </td>
 
-                            <td>{{ (f.size/1024/1024)|round(2) }} MB</td>
-                            <td>{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                <div class="row_actions">
-                                    <a class="btn" href="{{ url_for('download', filename=f.name) }}">Download</a>
-                                    {% if f.can_delete %}
-                                    <form action="{{ url_for('delete_file', filename=f.name) }}" method="post" onsubmit="return confirm('Delete {{ f.name }} permanently?');">
-                                        <button class="btn del" type="submit">Delete</button>
-                                    </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
+              <td>{{ (f.size/1024/1024)|round(2) }} MB</td>
+              <td>{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
+     <td>
+    <div class="row_actions">
+        {% if role == 'admin' or role == 'super' %}
+        <button class="menu-btn" onclick="openModal('{{ f.name }}', '{{ f.urgency }}', '{{ f.stage }}', '{{ f.note|replace("'", "\\'") }}')">⋮</button>
+        {% elif role == 'user' %}
+        <button class="menu-btn" onclick="openUserNoteModal('{{ f.name }}', '{{ f.note|replace("'", "\\'") }}')">⋮</button>
+        {% endif %}
+        <a class="btn" href="{{ url_for('download', filename=f.name) }}">Download</a>
+                  {% if f.can_delete %}
+                  <form action="{{ url_for('delete_file', filename=f.name) }}" method="post" onsubmit="return confirm('Delete {{ f.name }} permanently?');">
+                    <button class="btn del" type="submit">Delete</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
                 {% endif %}
 
                 {% if not admin_rows and not user_rows %}
@@ -195,11 +178,171 @@
 
 {% block scripts %}
 <script>
-    // auto-submit the Reviewed checkbox forms (only rendered for role 'user' on non-user uploads)
+    // Auto-submit the Reviewed checkbox forms
     document.addEventListener('DOMContentLoaded', function(){
         document.querySelectorAll('form.autosubmit input[type=checkbox]').forEach(function(cb){
             cb.addEventListener('change', function(){ cb.form.submit(); });
         });
+    });
+
+    // Modal functionality
+    let currentFilename = '';
+
+    function openModal(filename, urgency, stage, note) {
+        currentFilename = filename;
+        
+        // Set form values
+        document.getElementById('modal-urgency').value = urgency;
+        document.getElementById('modal-stage').value = stage;
+        document.getElementById('modal-note').value = note;
+        document.getElementById('modal-filename').textContent = filename;
+        
+        // Show modal
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('editModal');
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    function saveChanges() {
+        const urgency = document.getElementById('modal-urgency').value;
+        const stage = document.getElementById('modal-stage').value;
+        const note = document.getElementById('modal-note').value;
+        
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/update_file/' + encodeURIComponent(currentFilename);
+        
+        // Add CSRF token if needed (Flask doesn't require by default, but good practice)
+        
+        // Add fields
+        const fields = {
+            'urgency': urgency,
+            'stage': stage,
+            'note': note
+        };
+        
+        for (const [key, value] of Object.entries(fields)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit File: <span id="modal-filename"></span></h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field">
+                <label for="modal-urgency">Urgency</label>
+                <select id="modal-urgency">
+                    <option value="Normal">Normal</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label for="modal-stage">Stage</label>
+                <select id="modal-stage">
+                    {% for choice in stage_choices %}
+                    <option value="{{ choice }}">{{ choice }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-field">
+                <label for="modal-note">Notes (max 100 characters)</label>
+                <textarea id="modal-note" maxlength="100" placeholder="Add notes about this file..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn" onclick="saveChanges()">Save Changes</button>
+        </div>
+    </div>
+</div>
+<!-- User Note Modal (for role='user') -->
+<div id="userNoteModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Edit Note: <span id="user-modal-filename"></span></h3>
+            <button class="modal-close" onclick="closeUserNoteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field">
+                <label for="user-modal-note">Notes (max 100 characters)</label>
+                <textarea id="user-modal-note" maxlength="100" placeholder="Add notes about this file..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary" onclick="closeUserNoteModal()">Cancel</button>
+            <button class="btn" onclick="saveUserNote()">Save Note</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let userNoteFilename = '';
+
+    function openUserNoteModal(filename, note) {
+        userNoteFilename = filename;
+        document.getElementById('user-modal-filename').textContent = filename;
+        document.getElementById('user-modal-note').value = note;
+        document.getElementById('userNoteModal').classList.add('active');
+    }
+
+    function closeUserNoteModal() {
+        document.getElementById('userNoteModal').classList.remove('active');
+    }
+
+    function saveUserNote() {
+    const note = document.getElementById('user-modal-note').value;
+    
+    // Create form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/set_note/' + userNoteFilename;  // Don't encode here - Flask will handle it
+    
+    // Add note field
+    const noteInput = document.createElement('input');
+    noteInput.type = 'hidden';
+    noteInput.name = 'note';
+    noteInput.value = note;
+    form.appendChild(noteInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+    // Close user note modal on click outside or Escape
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('userNoteModal');
+        if (e.target === modal) closeUserNoteModal();
     });
 </script>
 {% endblock %}

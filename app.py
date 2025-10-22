@@ -570,10 +570,53 @@ def toggle_reviewed(filename):
 
     return redirect(url_for("index"))
 
+@app.route("/update_file/<path:filename>", methods=["POST"])
+@login_required
+@role_required("admin")
+def update_file(filename):
+    """Update urgency, stage, and note for a file in one request."""
+    if not is_safe_filename(filename):
+        abort(400)
+    path = FILES_DIR / filename
+    if not path.exists():
+        abort(404)
+
+    idx = load_index()
+    meta = idx.get(filename) or {}
+    
+    # Check if file was uploaded by user
+    if meta_get_uploader_role(meta) == "user":
+        flash("Cannot modify files uploaded by Amazon users.", "error")
+        return redirect(url_for("index"))
+
+    # Update urgency
+    new_urgency = request.form.get("urgency", "Normal").strip().title()
+    if new_urgency in {"High", "Normal"}:
+        meta["urgency"] = new_urgency
+
+    # Update stage
+    new_stage = normalize_stage(request.form.get("stage", "").strip())
+    meta["stage"] = new_stage
+
+    # Update note
+    note = (request.form.get("note") or "").strip()
+    if len(note) > 100:
+        note = note[:100]
+    meta["note"] = note
+    meta["note_by"] = session.get("user", "?")
+    meta["note_at"] = dt.datetime.now(UK_TIMEZONE).isoformat()
+
+    idx[filename] = meta
+    save_index(idx)
+
+    log_event(session.get("user", "?"), "update_file", f"{filename} (urgency={new_urgency}, stage={new_stage})")
+    flash(f"Updated {filename} successfully", "ok")
+    return redirect(url_for("index"))
+
 @app.route("/set_note/<path:filename>", methods=["POST"])
 @login_required
 def set_note(filename):
-    """Set note for a file."""
+    """Set note for a file - available to all logged-in users."""
     if not is_safe_filename(filename):
         abort(400)
     path = FILES_DIR / filename

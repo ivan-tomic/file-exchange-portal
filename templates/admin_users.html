@@ -32,7 +32,7 @@
                     <th>Email</th>
                     <th>Role</th>
                     <th>Status</th>
-                    <th style="width:520px">Actions</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -44,45 +44,7 @@
                     <td>{{ 'active' if u.is_active else 'inactive' }}</td>
                     <td>
                         <div class="row_actions">
-                            <form method="post" action="{{ url_for('admin_users_action') }}">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="promote">
-                                <button class="btn" type="submit">Promote → admin</button>
-                            </form>
-                            <form method="post" action="{{ url_for('admin_users_action') }}">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="demote">
-                                <button class="btn secondary" type="submit">Demote → user</button>
-                            </form>
-                            <form method="post" action="{{ url_for('admin_users_action') }}">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="make_super">
-                                <button class="btn" type="submit">Grant super</button>
-                            </form>
-                            {% if u.is_active %}
-                            <form method="post" action="{{ url_for('admin_users_action') }}">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="deactivate">
-                                <button class="btn del" type="submit">Deactivate</button>
-                            </form>
-                            {% else %}
-                            <form method="post" action="{{ url_for('admin_users_action') }}">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="activate">
-                                <button class="btn" type="submit">Activate</button>
-                            </form>
-                            {% endif %}
-                            <form method="post" action="{{ url_for('admin_users_action') }}" class="inline-form">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="reset_password">
-                                <input name="new_password" type="password" placeholder="New password" required>
-                                <button type="submit">Reset password</button>
-                            </form>
-                            <form method="post" action="{{ url_for('admin_users_action') }}">
-                                <input type="hidden" name="username" value="{{ u.username }}">
-                                <input type="hidden" name="action" value="delete_user">
-                                <button class="btn del" type="submit" onclick="return confirm('Delete user {{ u.username }}?')">Delete user</button>
-                            </form>
+                            <button class="menu-btn" onclick="openUserModal('{{ u.username }}', '{{ u.role }}', {{ u.is_active }})">⋮</button>
                         </div>
                     </td>
                 </tr>
@@ -152,6 +114,136 @@
 
         <div class="center-link">
             <h2><a href="{{ dashboard_url }}" target="_blank" rel="noopener noreferrer">Amazon Business - EU Campaign 2025 - Dashboard</a></h2>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentUsername = '';
+
+    function openUserModal(username, role, isActive) {
+        currentUsername = username;
+        document.getElementById('modal-username').textContent = username;
+        document.getElementById('modal-role').value = role;
+        
+        if (isActive) {
+            document.getElementById('btn-deactivate').style.display = 'inline-block';
+            document.getElementById('btn-activate').style.display = 'none';
+        } else {
+            document.getElementById('btn-deactivate').style.display = 'none';
+            document.getElementById('btn-activate').style.display = 'inline-block';
+        }
+        
+        document.getElementById('userModal').classList.add('active');
+    }
+
+    function closeUserModal() {
+        document.getElementById('userModal').classList.remove('active');
+        document.getElementById('reset-password-input').value = '';
+    }
+
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('userModal');
+        if (e.target === modal) closeUserModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeUserModal();
+    });
+
+    function submitUserAction(action) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("admin_users_action") }}';
+        
+        const usernameInput = document.createElement('input');
+        usernameInput.type = 'hidden';
+        usernameInput.name = 'username';
+        usernameInput.value = currentUsername;
+        form.appendChild(usernameInput);
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = action;
+        form.appendChild(actionInput);
+        
+        if (action === 'reset_password') {
+            const password = document.getElementById('reset-password-input').value;
+            if (!password || password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+            const pwInput = document.createElement('input');
+            pwInput.type = 'hidden';
+            pwInput.name = 'new_password';
+            pwInput.value = password;
+            form.appendChild(pwInput);
+        }
+        
+        if (action === 'delete_user') {
+            if (!confirm(`Delete user ${currentUsername}? This cannot be undone.`)) return;
+        }
+        if (action === 'deactivate') {
+            if (!confirm(`Deactivate user ${currentUsername}?`)) return;
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function changeRole() {
+        const newRole = document.getElementById('modal-role').value;
+        let action = '';
+        
+        if (newRole === 'admin') action = 'promote';
+        else if (newRole === 'user') action = 'demote';
+        else if (newRole === 'super') action = 'make_super';
+        
+        if (action) submitUserAction(action);
+    }
+</script>
+
+<div id="userModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Manage User: <span id="modal-username"></span></h3>
+            <button class="modal-close" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field">
+                <label for="modal-role">Change Role</label>
+                <select id="modal-role" onchange="changeRole()">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="super">Super</option>
+                </select>
+                <div class="small" style="margin-top: 5px; color: var(--muted);">Changing role will take effect immediately</div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
+
+            <div class="modal-field">
+                <label for="reset-password-input">Reset Password</label>
+                <input type="password" id="reset-password-input" placeholder="Enter new password (min 6 characters)">
+                <button class="btn" style="margin-top: 10px;" onclick="submitUserAction('reset_password')">Reset Password</button>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
+
+            <div class="modal-field">
+                <label style="color: #ff4d4f;">Dangerous Actions</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                    <button id="btn-deactivate" class="btn del" onclick="submitUserAction('deactivate')">Deactivate User</button>
+                    <button id="btn-activate" class="btn" onclick="submitUserAction('activate')" style="display: none;">Activate User</button>
+                    <button class="btn del" onclick="submitUserAction('delete_user')">Delete User</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary" onclick="closeUserModal()">Close</button>
         </div>
     </div>
 </div>
