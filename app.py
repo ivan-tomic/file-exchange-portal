@@ -68,8 +68,18 @@ def role_required(role):
     return decorator
 
 def is_safe_filename(filename: str) -> bool:
-    """Check if a filename is safe."""
-    return bool(re.fullmatch(r"[\w,\-\.\ ]+\.zip", filename, flags=re.IGNORECASE))
+    """Check if filename is safe and has allowed extension."""
+    # Extract extension
+    if '.' not in filename:
+        return False
+    ext = filename.rsplit('.', 1)[1].lower()
+    
+    # Check if extension is allowed
+    if ext not in ALLOWED_EXT:
+        return False
+    
+    # Check filename pattern (alphanumeric, spaces, dashes, underscores, dots)
+    return bool(re.fullmatch(r"[\w,\-\.\ ]+\.(zip|docx|pdf)", filename, flags=re.IGNORECASE))
 
 def normalize_stage(value):
     """Normalize stage values and handle legacy mappings."""
@@ -121,8 +131,11 @@ def urgency_rank(urgency: str) -> int:
     return 0 if urgency == "High" else 1
 
 def visible_files_for(_user: str, _role: str):
-    """Get list of visible files for a user."""
-    return [p for p in FILES_DIR.glob("*.zip") if p.is_file()]
+    """Get all visible files for a user (zip, docx, pdf)."""
+    files = []
+    for ext in ALLOWED_EXT:
+        files.extend([p for p in FILES_DIR.glob(f"*.{ext}") if p.is_file()])
+    return files
 
 def sort_rows(rows):
     """Sort rows by urgency and modification time."""
@@ -403,7 +416,7 @@ def upload():
         return redirect(url_for("index"))
     ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
     if ext not in ALLOWED_EXT:
-        flash("Only .zip files are allowed.", "error")
+        flash("Only .zip, .docx, and .pdf files are allowed.", "error")
         return redirect(url_for("index"))
 
     safe_name = re.sub(r"[^\w\-. ]+", "_", f.filename)

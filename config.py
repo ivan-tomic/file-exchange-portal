@@ -26,7 +26,7 @@ INVITE_CODE = os.getenv("INVITE_CODE", "")
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "0") == "1"
 
 # File upload settings
-ALLOWED_EXT = {"zip"}
+ALLOWED_EXT = {"zip", "docx", "pdf"}
 MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 500 * 1024 * 1024))  # 500MB
 
 # Server settings

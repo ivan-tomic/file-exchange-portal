@@ -25,8 +25,8 @@
                             {% endfor %}
                         </select>
                     {% endif %}
-                    <input type="file" name="file" accept=".zip" required>
-                    <button class="btn" type="submit">Upload .zip</button>
+                    <input type="file" name="file" accept=".zip,.docx,.pdf" required>
+                    <button class="btn" type="submit">Upload File</button>
                 </form>
                 {% if role == 'super' %}
                     <a class="btn secondary" href="{{ url_for('admin_users') }}">User Admin</a>
